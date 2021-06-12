@@ -1,5 +1,5 @@
 import { createSlice } from '@reduxjs/toolkit';
-import data from "./db.json";
+import axios from 'axios';
 
 const initialState = {
     seatsArray: null,
@@ -8,16 +8,31 @@ const initialState = {
     continues: false,
 };
 
+export function fetchSeatsData(){
+    return (dispatch) =>{
+        return axios.get('http://localhost:8000/seats')
+            .then(function (response) {
+                dispatch(receiveData(response.data));
+                return response.data;
+                //dispatch action
+            })
+            .catch(function (error) {
+                console.log(error);
+                return error;
+
+                // throw error
+                //
+            });
+    }
+}
+
 export const cinemaSlice = createSlice({
     name: 'cinema',
     initialState,
     reducers: {
-        fetchSeatsData: (state) => {
-            // Redux Toolkit allows us to write "mutating" logic in reducers. It
-            // doesn't actually mutate the state because it uses the Immer library,
-            // which detects changes to a "draft state" and produces a brand new
-            // immutable state based off those changes
-            state.seatsArray = renderSeats(data.seats);
+
+        receiveData: (state,action)=>{
+            state.seatsArray = renderSeats(action.payload);
         },
         switchSelectedSeats: (state, action)=> {
             let newSeatsArr = action.payload;
@@ -81,14 +96,17 @@ export const cinemaSlice = createSlice({
     },
 });
 
-export const { fetchSeatsData, switchSelectedSeats,  setSeatsNumber} = cinemaSlice.actions;
+export const {switchSelectedSeats,  setSeatsNumber, receiveData} = cinemaSlice.actions;
 
-export const getSelected = (state) => state.cinema.selected;
-export const getSeatsNumber = (state) => state.cinema.seatsNumber;
-export const getSeatsArray = (state) => state.cinema.seatsArray;
-export const getSeatsContinues = (state) => state.cinema.continues;
+export const getSelected = (state) => state.selected;
+export const getSeatsNumber = (state) => state.seatsNumber;
+export const getSeatsArray = (state) => state.seatsArray;
+export const getSeatsContinues = (state) => state.continues;
 export const getFreeSeatsNumber = (state) => {
-    return state.cinema.seatsArray.map(seatRow => seatRow.reduce((prev, val)=>{
+    if (state.seatsArray==null){
+        return 0;
+    }
+    return state.seatsArray.map(seatRow => seatRow.reduce((prev, val)=>{
         if (val == null || val.reserved){
             return prev;
         }
@@ -97,8 +115,11 @@ export const getFreeSeatsNumber = (state) => {
 };
 
 export const getMaxConsecutiveSeatsNumber = (state) =>{
+    if (state.seatsArray==null){
+        return 0;
+    }
     let maxy = 0;
-    state.cinema.seatsArray.map(seatRow => seatRow.reduce((prev,val)=>{
+    state.seatsArray.map(seatRow => seatRow.reduce((prev,val)=>{
         if (val===null || val.reserved){
             return {seat:val, consecutive:0};
         }

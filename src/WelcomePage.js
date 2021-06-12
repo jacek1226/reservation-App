@@ -49,7 +49,7 @@ export default function WelcomePage (){
         }
 
         dispatch(setSeatsNumber({number:values.numSeats, continues: values.nextToEachOther}));
-        history.push('/seats')
+        history.push('/seat')
     };
 
     const onFinishFailed = (errorInfo) => {

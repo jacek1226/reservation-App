@@ -27,7 +27,7 @@ ReactDOM.render(
     <Provider store={store}>
         <Router>
             <Switch>
-                <Route path="/seats">
+                <Route path="/seat">
                     <SeatsPage />
                 </Route>
                 <Route path="/return">
