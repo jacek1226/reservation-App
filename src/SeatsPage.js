@@ -1,10 +1,15 @@
-import React, {useState} from "react";
+import React from "react";
 import Tile from "./Tile";
-import {Button, Col, Row} from "antd";
+import {Button, Col, Row, notification} from "antd";
 import {useSelector,useDispatch } from "react-redux";
-import {switchSelectedSeats,getSelected ,getSeatsNumber,getSeatsArray } from "./cinemaSlice";
-import {Link, useHistory} from "react-router-dom";
-
+import {
+    switchSelectedSeats,
+    getSelected,
+    getSeatsNumber,
+    getSeatsArray,
+    getSeatsContinues,
+} from "./cinemaSlice";
+import {useHistory} from "react-router-dom";
 
 export default function SeatsPage () {
     const dispatch = useDispatch();
@@ -12,7 +17,9 @@ export default function SeatsPage () {
 
     const seatsArray = useSelector(getSeatsArray);
     const seatsNumber = useSelector(getSeatsNumber);
-    const choice =  useSelector(getSelected).map((seat) => seat.id);
+    const seats = useSelector(getSelected)
+    const choice =  seats.map((seat) => seat.id);
+    const seatsContinues =  useSelector(getSeatsContinues);
 
     const chooseSeat= (seat)=>{
         if (seat !== null) {
@@ -21,16 +28,46 @@ export default function SeatsPage () {
     }
 
     if (seatsArray===null){
-        return <div>
+        return (<div>
             "error"!
-        </div>
+        </div>);
     }
-    let buttonText ="Reserwuj";
-    let linkButton = <Link to="/return">{buttonText}</Link>;
+    const areContinues=()=>{
+        let continues = seats.map(seat => seat).reduce((prev,val)=>{
+            if(prev.seat===null ||prev.seat.cords.x !== val.cords.x || prev.seat.cords.y !== (val.cords.y - 1)){
+                return {seat:val, consecutive:1};
+            }
+            return {seat:val, consecutive: prev.consecutive +1}
+        },{seat:null, consecutive: 0})
+
+        return continues.consecutive ===seats.length;
+    }
+
     const selectSeats = ()=>{
-        if(choice.length === seatsNumber) {
-            history.push('/return');
+
+
+        if(choice.length !== seatsNumber) {
+            notification.open({
+                message: 'Wybrano niewłaściwą liczbę miejsc!',
+                description:
+                    'zadeklarowano: '+seatsNumber+", wybrano: "+choice.length,
+
+            });
+            return;
         }
+        if(seatsContinues && !areContinues()) {
+            notification.open({
+                message: 'Wybrano złe miejsca!',
+                description:
+                    'Wybrane miejsca powinny być obok siebie, nieoddzielone wolną przestrzenią lub zajętym miejscem.',
+            });
+            return;
+        }
+
+
+
+        history.push('/return');
+
     }
 
     let cinema = [];
@@ -89,14 +126,14 @@ export default function SeatsPage () {
             </Col>
 
             <Col span={5} style={{display:"flex", justifyContent:"center"}}>
-                <Button type="default" htmlType="submit" onClick={selectSeats} style={{width:"100%", height:"100%"}}> {buttonText}</Button>
+                <Button type="default" htmlType="submit" onClick={selectSeats} style={{width:"100%", height:"100%"}}> "Rezerwuj"</Button>
             </Col>
         </Row>
     )
 
     cinema.push(footer);
     return (
-        <div className="cinema">{seatsNumber}{cinema}</div>
+        <div className="cinema">{cinema}</div>
     );
 
 }
