@@ -1,8 +1,5 @@
-import { configureStore } from '@reduxjs/toolkit';
+import { createStore , applyMiddleware} from '@reduxjs/toolkit';
+import thunk from "redux-thunk";
 import cinemaReducer from '../cinemaSlice';
 
-export const store = configureStore({
-  reducer: {
-    cinema: cinemaReducer,
-  },
-});
+export const store = createStore(cinemaReducer, applyMiddleware(thunk));

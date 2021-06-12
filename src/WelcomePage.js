@@ -1,22 +1,55 @@
-import React, {useState} from "react";
-import {Button, Checkbox, Form, Input} from "antd";
+import React from "react";
+import {Button, Checkbox, Form, Input, notification} from "antd";
 import './WelcomePage.css';
-import {useDispatch } from 'react-redux';
-import {setSeatsNumber } from "./cinemaSlice";
+import {useSelector,useDispatch } from "react-redux";
+import {
+    setSeatsNumber,
+    getFreeSeatsNumber,
+    getMaxConsecutiveSeatsNumber,
+} from "./cinemaSlice";
 
 import {useHistory} from "react-router-dom";
 
 
-export default function WelcomePage (props){
+export default function WelcomePage (){
     const history = useHistory();
-    const [count, setCount] = useState(0);
     const dispatch = useDispatch();
 
+    const freeSeatsNumber = useSelector(getFreeSeatsNumber);
+    const maxConsecutiveSeatsNumber = useSelector(getMaxConsecutiveSeatsNumber);
+
     const onFinish = (values) => {
-        if (values.numSeats > 0) {
-            dispatch(setSeatsNumber(values.numSeats));
-            history.push('/seats')
+        if (!(values.numSeats > 0)) {
+            notification.open({
+                message: 'Proszę wybrać dodatnią liczbę miejsc!',
+                description:
+                    '',
+            });
+            return;
         }
+        if (values.numSeats > freeSeatsNumber) {
+            notification.open({
+                message: 'Niewystarczająca liczba miejsc!',
+                description:
+                    'Na sali nie została wystarczająca liczba miejsc wolnych! ' +
+                    'Liczba wolnych miejsc to '+freeSeatsNumber,
+            });
+            return;
+        }
+
+
+        if (values.nextToEachOther && values.numSeats > maxConsecutiveSeatsNumber) {
+            notification.open({
+                message: 'Niewystarczająca liczba miejsc!',
+                description:
+                    'Na sali nie została wystarczająca liczba miejsc wolnych, ' +
+                    'które są obok siebie! Liczba takich miejsc to '+maxConsecutiveSeatsNumber,
+            });
+            return;
+        }
+
+        dispatch(setSeatsNumber({number:values.numSeats, continues: values.nextToEachOther}));
+        history.push('/seat')
     };
 
     const onFinishFailed = (errorInfo) => {
@@ -42,18 +75,8 @@ export default function WelcomePage (props){
                     wrapperCol={{span:12}}
                     name="numSeats"
                     label={"Liczba miejsc: "}
-                    rules={[
-                        {
-                            required: true,
-                            message: 'Proszę podać liczbę miejsc!',
-                        },
-                    ]}
-
                 >
-                    <Input type="number" onChange={(e)=>{
-                        setCount(parseInt(e.target.value))
-
-                    }} />
+                    <Input type="number" />
                 </Form.Item>
                 <Form.Item span={24} name="nextToEachOther" valuePropName="checked">
                     <Checkbox value={false}> Czy miejsca mają być obok siebie? </Checkbox>
